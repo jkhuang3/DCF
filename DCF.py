@@ -7,89 +7,134 @@ import BloombergDataGrab as BDG
 tickerInput = input("Please enter a ticker: ")
 dateInput = input("Please enter a date in YYYYMMDD: ")
 
-times = 5
-YoYSteps = -0.01
-GPMarginSteps = -0.001
-EBITDASteps = -0.001
-DepreciationSteps = -0.001
-ARSteps = 0.1
-InventorySteps = 0.1
-APSteps = 0.1
-CapexSteps = 0.001
+
+PerpetualGrowthRate = 0.03
+
+mode = "Exit Multiple"
 
 #This pulls all the data
 
-WACC, ETR, Revenue, COGS, GP, EBITDA, DA, EBIT, NWC, Capex, AR, Inventory, AP, Cash, EM, Shares = BDG.BloombergDataGrab(tickerInput + " US Equity", dateInput)
-
-#print(Revenue.iloc[-1])
+WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurrent, DACurrent, EBITCurrent, NWCPrevious, NWCCurrent, CapexCurrent, ARPrevious, ARCurrent, InventoryPrevious, InventoryCurrent, APPrevious, APCurrent, Cash, EM, NetDebt, Shares = BDG.BloombergDataGrab(tickerInput + " US Equity", dateInput)
 
 
 #This does the actual calculation of the DCF
-def DCF():
+def DCF(mode):
+
+    times = 5
+    RevenueSteps = -0.01
+    GPMarginSteps = -0.001
+    EBITDASteps = -0.001
+    DepreciationSteps = -0.001
+    ARSteps = 0.1
+    InventorySteps = 0.1
+    APSteps = 0.1
+    CapexSteps = 0.001
     
-#This is the actual calculation, I will add the repeating part later
+    FCFMaxYearsPerpetuity = 0
+    FCFMaxYearsExitMultiple = 0
+    
+    #This is the actual calculation, I will add the repeating part later
     #This is the initialization for all the variables 
-    CurrentRevenue = Revenue.iloc[-1]
-    YoYGrowth = CurrentRevenue/Revenue.iloc[-1]
+    YoYGrowth = (RevenueCurrent/RevenuePrevious) - 1
     
-    CurrentCOGS = COGS.iloc[-1]
+    GPMargin = (RevenueCurrent - COGSCurrent) / RevenueCurrent
+    DepreciationPercent = DACurrent/RevenueCurrent
+    EBITDAMargin = EBITDACurrent/RevenueCurrent
     
-    GPMargin = (CurrentRevenue - CurrentCOGS) / CurrentRevenue
-    DepreciationPercent = DA.iloc[-1]/CurrentRevenue
-    EBITDAMargin = EBITDA.iloc[-1]/CurrentRevenue
-    
-    DSO = AR.iloc[-1]/(CurrentRevenue/365)
-    DIO = Inventory.iloc[-1]/(CurrentCOGS/365)
-    DPO = AP.iloc[-1]/(CurrentCOGS/365)
+    DSO = ARCurrent/(RevenueCurrent/365)
+    DIO = ARCurrent/(COGSCurrent/365)
+    DPO = APCurrent/(COGSCurrent/365)
    
-    CurrentEBIT = EBIT.iloc[-1] * (1-(ETR/100))
-    NWC = AR.iloc[-1] + Inventory.iloc[-1] - AP.iloc[-1]
-    ChangeNWC = NWC - (AR.iloc[-2] + Inventory.iloc[-2] - AP.iloc[-2])
+    CurrentEBIT = EBITCurrent * (1-(ETR/100))
+    NWC = ARCurrent + InventoryCurrent - APCurrent
+    OldNWC = NWC
+    ChangeNWC = NWC - (ARPrevious + InventoryPrevious - APPrevious)
     
-    CapexPercent = Capex.iloc[-1]/CurrentRevenue
+    CapexPercent = CapexCurrent/RevenueCurrent
     
-    FCFtoFirm = CurrentEBIT + DA.iloc[-1] - (ChangeNWC + Capex.iloc[-1])
+    FCFtoFirm = CurrentEBIT + DACurrent - (ChangeNWC + CapexCurrent)
+    
+    FCFs = 0
+    
+    NewRevenue = RevenueCurrent
+    CurrentCOGS = COGSCurrent
     
     #I am now simulating the future years
     for i in range(times):
+        
         #Calculate the Revenue Growth
-        YoYGrowth += YoYSteps
-        CurrentRevenue *= YoYGrowth
+        YoYGrowth += RevenueSteps
+        print(YoYGrowth)
+        NewRevenue *= (1 + YoYGrowth)
+        
+        #print(NewRevenue)
         
         
         #Calculate the EBIT Growth
         EBITDAMargin += EBITDASteps
         DepreciationPercent += DepreciationSteps
-        NewDepreciation = DepreciationPercent * CurrentRevenue
-        NewEBIT = (CurrentRevenue * EBITDAMargin) - (CurrentRevenue * DepreciationPercent) * (1-(ETR/100))
+        NewDepreciation = DepreciationPercent * NewRevenue
+        
+        NewEBITDA = NewRevenue * EBITDAMargin
+        NewEBIT = (NewRevenue * EBITDAMargin) - (NewRevenue * DepreciationPercent)
+        NewForwardEBIT = NewEBIT - NewEBIT * ETR/100
+       
         
         #Calculate the rest to calculate the FCF Firm Value for that years
         DSO += ARSteps
-        NewAR = DSO * (CurrentRevenue/365)
+        NewAR = DSO * (NewRevenue/365)
         
         GPMargin += GPMarginSteps
-        NewCOGS = (1-GPMargin) * CurrentRevenue
+        NewCOGS = (1 - GPMargin) * NewRevenue
         
         DIO += InventorySteps
-        NewInventory = DIO * (CurrentCOGS/365)
+        NewInventory = DIO * (NewCOGS/365)
         
         DPO += APSteps
         NewAP = DPO * (NewCOGS/365)
         
-        OldNWC = NWC
-        NWC = NewAR + NewInventory - NewAP
+        
+        NewNWC = NewAR + NewInventory - NewAP
         NewChangeNWC = NWC - OldNWC
+        OldNWC = NewNWC
         
         CapexPercent += CapexSteps
-        NewCapex = CapexPercent * CurrentRevenue
+        NewCapex = CapexPercent * NewRevenue
         
-        FCFtoFirm = NewEBIT + NewDepreciation - (NewChangeNWC + NewCapex)
+        FCFtoFirm = NewForwardEBIT + NewDepreciation - (NewChangeNWC + NewCapex)
         
-        FCFPresentValue = FCFtoFirm * (1/((1 + WACC/100)**(i+1)))
+        FCFPresentValue = FCFtoFirm/((1 + WACC/100)**(i+1))
+        FCFs += FCFPresentValue
         
+        #print(FCFPresentValue)
         
+        FCFMaxYearsPerpetuity = FCFPresentValue
         
-        
+        FCFMaxYearsExitMultiple = NewEBITDA
+      
+    if(mode == "Perpituity"):
+        TerminalValue = FCFMaxYears * (1 + PerpetualGrowthRate)/(WACC - PerpetualGrowthRate)
+    else:
+        TerminalValue = EM * FCFMaxYearsExitMultiple
+   
+    
+    PresentTerminalValue = TerminalValue * ((1 + WACC/100)**(times))
+    
+    FirmValue = PresentTerminalValue + FCFs
+    
+    EquityValue = FirmValue - NetDebt + Cash
+    
+    IntrinsicValue = EquityValue/Shares
+    
+    return IntrinsicValue
+    
+
+DCF(mode)
+#print(DCF(mode))
+    
+    
+    
+    
         
         
         
