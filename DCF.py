@@ -6,21 +6,21 @@ import BloombergDataGrab as BDG
 
 tickerInput = input("Please enter a ticker: ")
 dateInput = input("Please enter a date in YYYYMMDD: ")
-
+modeInput = input("Please enter a mode (Perpetuity or Exit Multiple): ")
+times = input("Please specify a time period: ")
 
 PerpetualGrowthRate = 0.03
 
-mode = "Exit Multiple"
+mode = "Perpetuity"
 
 #This pulls all the data
 
-WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurrent, DACurrent, EBITCurrent, NWCPrevious, NWCCurrent, CapexCurrent, ARPrevious, ARCurrent, InventoryPrevious, InventoryCurrent, APPrevious, APCurrent, Cash, EM, NetDebt, Shares = BDG.BloombergDataGrab(tickerInput + " US Equity", dateInput)
+WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurrent, DACurrent, EBITCurrent, NWCPrevious, NWCCurrent, CapexCurrent, ARPrevious, ARCurrent, InventoryPrevious, InventoryCurrent, APPrevious, APCurrent, Cash, EM, NetDebt, Shares = BDG.BloombergDataGrab(tickerInput.upper() + " US Equity", dateInput)
 
 
 #This does the actual calculation of the DCF
-def DCF(mode):
+def DCF(mode, times):
 
-    times = 5
     RevenueSteps = -0.01
     GPMarginSteps = -0.001
     EBITDASteps = -0.001
@@ -42,15 +42,15 @@ def DCF(mode):
     EBITDAMargin = EBITDACurrent/RevenueCurrent
     
     DSO = ARCurrent/(RevenueCurrent/365)
-    DIO = ARCurrent/(COGSCurrent/365)
+    DIO = InventoryCurrent/(COGSCurrent/365)
     DPO = APCurrent/(COGSCurrent/365)
    
     CurrentEBIT = EBITCurrent * (1-(ETR/100))
     NWC = ARCurrent + InventoryCurrent - APCurrent
     OldNWC = NWC
     ChangeNWC = NWC - (ARPrevious + InventoryPrevious - APPrevious)
-    
-    CapexPercent = CapexCurrent/RevenueCurrent
+    CapexPercent = (CapexCurrent/RevenueCurrent) * -1
+   
     
     FCFtoFirm = CurrentEBIT + DACurrent - (ChangeNWC + CapexCurrent)
     
@@ -64,21 +64,18 @@ def DCF(mode):
         
         #Calculate the Revenue Growth
         YoYGrowth += RevenueSteps
-        print(YoYGrowth)
         NewRevenue *= (1 + YoYGrowth)
         
-        #print(NewRevenue)
         
         
         #Calculate the EBIT Growth
         EBITDAMargin += EBITDASteps
         DepreciationPercent += DepreciationSteps
-        NewDepreciation = DepreciationPercent * NewRevenue
+        NewDepreciation = NewRevenue * DepreciationPercent
         
         NewEBITDA = NewRevenue * EBITDAMargin
         NewEBIT = (NewRevenue * EBITDAMargin) - (NewRevenue * DepreciationPercent)
-        NewForwardEBIT = NewEBIT - NewEBIT * ETR/100
-       
+        NewForwardEBIT = NewEBIT - (NewEBIT * ETR/100)
         
         #Calculate the rest to calculate the FCF Firm Value for that years
         DSO += ARSteps
@@ -95,30 +92,27 @@ def DCF(mode):
         
         
         NewNWC = NewAR + NewInventory - NewAP
-        NewChangeNWC = NWC - OldNWC
+        NewChangeNWC = NewNWC - OldNWC
         OldNWC = NewNWC
         
         CapexPercent += CapexSteps
         NewCapex = CapexPercent * NewRevenue
         
-        FCFtoFirm = NewForwardEBIT + NewDepreciation - (NewChangeNWC + NewCapex)
+        
+        FCFtoFirm = NewForwardEBIT + NewDepreciation - NewChangeNWC - NewCapex
+        FCFMaxYearsPerpetuity = FCFtoFirm
         
         FCFPresentValue = FCFtoFirm/((1 + WACC/100)**(i+1))
         FCFs += FCFPresentValue
         
-        #print(FCFPresentValue)
-        
-        FCFMaxYearsPerpetuity = FCFPresentValue
-        
         FCFMaxYearsExitMultiple = NewEBITDA
       
-    if(mode == "Perpituity"):
-        TerminalValue = FCFMaxYears * (1 + PerpetualGrowthRate)/(WACC - PerpetualGrowthRate)
+    if(mode == "Perpetuity"):
+        TerminalValue = FCFMaxYearsPerpetuity * (1 + PerpetualGrowthRate)/(WACC/100 - PerpetualGrowthRate)
     else:
         TerminalValue = EM * FCFMaxYearsExitMultiple
    
-    
-    PresentTerminalValue = TerminalValue * ((1 + WACC/100)**(times))
+    PresentTerminalValue = TerminalValue * (1/((1 + WACC/100)**(times)))
     
     FirmValue = PresentTerminalValue + FCFs
     
@@ -126,11 +120,11 @@ def DCF(mode):
     
     IntrinsicValue = EquityValue/Shares
     
-    return IntrinsicValue
+    return "Intrinsic Value: " + str(round(IntrinsicValue, 2))
     
 
-DCF(mode)
-#print(DCF(mode))
+#DCF(mode)
+print(DCF(modeInput, int(times)))
     
     
     

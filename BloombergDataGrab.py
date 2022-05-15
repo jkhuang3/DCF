@@ -18,7 +18,7 @@ def BloombergDataGrab(security, date):
     
     #Main Section
     Revenue = testCon.bdh(security, 'IS010', str(int(date) - 30000), date).iloc[[False, False, False, False, True, True, True, True, True, True, True, True], 0] #Revenue in Millions
-    print(Revenue)
+    #print(Revenue)
     COGS = testCon.bdh(security, 'IS021', str(int(date) - 30000), date).iloc[[False, False, False, False, True, True, True, True, True, True, True, True], 0] #Cost of Revenue in Millions
     GP = testCon.bdh(security, 'RR861', str(int(date) - 30000), date).iloc[[False, False, False, False, True, True, True, True, True, True, True, True], 0] #Gross Profit in Millions
     EBITDA = testCon.bdh(security, 'RR009', str(int(date) - 30000), date).iloc[[False, False, False, False, True, True, True, True, True, True, True, True], 0] #EBITDA in Millions
@@ -56,13 +56,23 @@ def BloombergDataGrab(security, date):
     APPrevious = AP.iloc[-2]
     APCurrent = AP.iloc[-1]
     
-    for i in range(8):
+    for i in range(2,8):
         if (i < 4):
             RevenuePrevious += Revenue.iloc[i]
             #ARPrevious += AR.iloc[i]
             #InventoryPrevious += Inventory.iloc[i]
             #APPrevious += AP.iloc[i]
             NWCPrevious += NWC.iloc[i]
+        elif (i >= 4 and i < 6):
+            RevenuePrevious += Revenue.iloc[i]
+            NWCPrevious += NWC.iloc[i]
+            RevenueCurrent += Revenue.iloc[i]
+            COGSCurrent += COGS.iloc[i]
+            GPCurrent += GP.iloc[i]
+            EBITDACurrent += EBITDA.iloc[i]
+            EBITCurrent += EBIT.iloc[i]
+            NWCCurrent += NWC.iloc[i]
+            CapexCurrent += Capex.iloc[i]
         else:
             RevenueCurrent += Revenue.iloc[i]
             COGSCurrent += COGS.iloc[i]
@@ -76,6 +86,9 @@ def BloombergDataGrab(security, date):
             #InventoryCurrent += Inventory.iloc[i]
             #APCurrent += AP.iloc[i]
     
+    #print(RevenueCurrent)
+    #print(RevenuePrevious)
+    #print(DACurrent)
     
     return WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurrent, DACurrent, EBITCurrent, NWCPrevious, NWCCurrent, CapexCurrent, ARPrevious, ARCurrent, InventoryPrevious, InventoryCurrent, APPrevious, APCurrent, Cash, EM, NetDebt, Shares
 
