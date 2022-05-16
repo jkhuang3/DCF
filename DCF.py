@@ -11,8 +11,6 @@ times = input("Please specify a time period: ")
 
 PerpetualGrowthRate = 0.03
 
-mode = "Perpetuity"
-
 #This pulls all the data
 
 WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurrent, DACurrent, EBITCurrent, NWCPrevious, NWCCurrent, CapexCurrent, ARPrevious, ARCurrent, InventoryPrevious, InventoryCurrent, APPrevious, APCurrent, Cash, EM, NetDebt, Shares = BDG.BloombergDataGrab(tickerInput.upper() + " US Equity", dateInput)
@@ -128,7 +126,7 @@ def DCF(mode, times):
 
         FCFMaxYearsExitMultiple = NewEBITDA
       
-    if(mode == "Perpetuity"):
+    if(mode == "PERPETUITY"):
         TerminalValue = FCFMaxYearsPerpetuity * (1 + PerpetualGrowthRate)/(WACC/100 - PerpetualGrowthRate)
     else:
         TerminalValue = EM * FCFMaxYearsExitMultiple
@@ -145,7 +143,7 @@ def DCF(mode, times):
     
 
 #DCF(mode)
-print(DCF(modeInput, int(times)))
+print(DCF(modeInput.upper(), int(times)))
     
     
     
