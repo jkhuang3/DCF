@@ -20,15 +20,6 @@ WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurren
 
 #This does the actual calculation of the DCF
 def DCF(mode, times):
-
-    RevenueSteps = -0.01
-    GPMarginSteps = -0.001
-    EBITDASteps = -0.001
-    DepreciationSteps = -0.001
-    ARSteps = 0.1
-    InventorySteps = 0.1
-    APSteps = 0.1
-    CapexSteps = 0.001
     
     FCFMaxYearsPerpetuity = 0
     FCFMaxYearsExitMultiple = 0
@@ -61,10 +52,40 @@ def DCF(mode, times):
     
     #I am now simulating the future years
     for i in range(times):
+        #This specifies that amount that each step carries
+        if times <= 5:
+            RevenueSteps = -0.01
+            GPMarginSteps = -0.001
+            EBITDASteps = -0.001
+            DepreciationSteps = -0.001
+            ARSteps = 0.1
+            InventorySteps = 0.1
+            APSteps = 0.1
+            CapexSteps = 0.001
+        else:
+            if i < 5:
+                RevenueSteps = -0.01
+                GPMarginSteps = -0.001
+                EBITDASteps = -0.001
+                DepreciationSteps = -0.001
+                ARSteps = 0.1
+                InventorySteps = 0.1
+                APSteps = 0.1
+                CapexSteps = 0.001
+            else:
+                RevenueSteps = -0.0025
+                GPMarginSteps = -0.0005
+                EBITDASteps = 0.0005
+                DepreciationSteps = 0.0005
+                ARSteps = -0.05
+                InventorySteps = -0.05
+                APSteps = -0.05
+                CapexSteps = -0.0005
         
         #Calculate the Revenue Growth
         YoYGrowth += RevenueSteps
         NewRevenue *= (1 + YoYGrowth)
+        
         
         
         
@@ -104,7 +125,7 @@ def DCF(mode, times):
         
         FCFPresentValue = FCFtoFirm/((1 + WACC/100)**(i+1))
         FCFs += FCFPresentValue
-        
+
         FCFMaxYearsExitMultiple = NewEBITDA
       
     if(mode == "Perpetuity"):
