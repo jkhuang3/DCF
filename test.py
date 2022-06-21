@@ -1,4 +1,4 @@
-##This ia where I will make the calls to the terminal to input to the DCF
+#This ia where I will make the calls to the terminal to input to the DCF
 
 
 import blpapi
@@ -6,6 +6,7 @@ import sys
 import pdblp
 import pandas as pd
 import numpy as np
+
 
 def BloombergDataGrab(security, date):
 
@@ -67,6 +68,8 @@ def BloombergDataGrab(security, date):
         Capex = pd.DataFrame(np.zeros(shape=(8,1)))
     else:
         Capex.iloc[[False, False, False, False, True, True, True, True, True, True, True, True], 0] # Capex in Millions
+    
+    
     #Section used to calculate the Drivers of Growth in the Main Section
     AR = testCon.bdh(security, 'BS496', str(int(date) - 30000), date)
     if (AR.empty):
@@ -104,7 +107,8 @@ def BloombergDataGrab(security, date):
         NetDebt = NetDebt.iloc[-1, 0] #Net Debt\
     Shares = testCon.bdh(security, 'BS081', str(int(date) - 30000), date).iloc[-1, 0] #Number of Outstanding Shares in Millions
 
-    LastPrice = testCon.bdh(security, 'PX_LAST', str(int(date)-1), date).iloc[-1, 0] #Last Share Price for the Security
+    LastPrice = testCon.bdh(security, 'PX_LAST', str(int(date)-1), date).iloc[-1, 0] #Last Price in Dollars
+    print(LastPrice)
     
     RevenuePrevious = 0
     RevenueCurrent = 0
@@ -152,8 +156,15 @@ def BloombergDataGrab(security, date):
             #ARCurrent += AR.iloc[i]
             #InventoryCurrent += Inventory.iloc[i]
             #APCurrent += AP.iloc[i]
+    
     #print(RevenueCurrent)
     #print(RevenuePrevious)
     #print(DACurrent)
     
-    return WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurrent, DACurrent, EBITCurrent, NWCPrevious, NWCCurrent, CapexCurrent, ARPrevious, ARCurrent, InventoryPrevious, InventoryCurrent, APPrevious, APCurrent, Cash, EM, NetDebt, Shares, LastPrice
+    #return WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurrent, DACurrent, EBITCurrent, NWCPrevious, NWCCurrent, CapexCurrent, ARPrevious, ARCurrent, InventoryPrevious, InventoryCurrent, APPrevious, APCurrent, Cash, EM, NetDebt, Shares, LastPrice
+
+#WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurrent, DACurrent, EBITCurrent, NWCPrevious, NWCCurrent, CapexCurrent, ARPrevious, ARCurrent, InventoryPrevious, InventoryCurrent, APPrevious, APCurrent, Cash, EM, NetDebt, Shares = BloombergDataGrab('AAPL US Equity', '20220412')
+
+#RevenueRandom = np.random.normal(RevenueCurrent, 0.1, size=100)
+#print(np.around(RevenueRandom, decimals=2))
+print(BloombergDataGrab('AMZN US Equity', '20220618'))

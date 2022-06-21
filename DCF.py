@@ -13,8 +13,7 @@ PerpetualGrowthRate = 0.03
 
 #This pulls all the data
 
-WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurrent, DACurrent, EBITCurrent, NWCPrevious, NWCCurrent, CapexCurrent, ARPrevious, ARCurrent, InventoryPrevious, InventoryCurrent, APPrevious, APCurrent, Cash, EM, NetDebt, Shares = BDG.BloombergDataGrab(tickerInput.upper() + " US Equity", dateInput)
-
+WACC, ETR, RevenuePrevious, RevenueCurrent, COGSCurrent, GPCurrent, EBITDACurrent, DACurrent, EBITCurrent, NWCPrevious, NWCCurrent, CapexCurrent, ARPrevious, ARCurrent, InventoryPrevious, InventoryCurrent, APPrevious, APCurrent, Cash, EM, NetDebt, Shares, LastPrice = BDG.BloombergDataGrab(tickerInput.upper() + " US Equity", dateInput)
 
 #This does the actual calculation of the DCF
 def DCF(mode, times):
@@ -85,8 +84,6 @@ def DCF(mode, times):
         NewRevenue *= (1 + YoYGrowth)
         
         
-        
-        
         #Calculate the EBIT Growth
         EBITDAMargin += EBITDASteps
         DepreciationPercent += DepreciationSteps
@@ -137,24 +134,15 @@ def DCF(mode, times):
     
     EquityValue = FirmValue - NetDebt + Cash
     
-    IntrinsicValue = EquityValue/Shares
+    IntrinsicValue = float((EquityValue/Shares).iloc[-1])
+
+    Upside = ((IntrinsicValue-LastPrice)/float(LastPrice)) * 100
     
-    return "Intrinsic Value: " + str(round(IntrinsicValue, 2))
+    _str = "The Intrinsic Value is {IntrinsicValue:.2f}\nThe Stock Price is {LastPrice:.2f}\nThe Potential Upside is {Upside:.2f}%\n".format(IntrinsicValue=IntrinsicValue, LastPrice=float(LastPrice), Upside=Upside)
+
+    return _str
+   
     
 
 #DCF(mode)
 print(DCF(modeInput.upper(), int(times)))
-    
-    
-    
-    
-        
-        
-        
-        
-        
-        
-        
-        
-    
-    
